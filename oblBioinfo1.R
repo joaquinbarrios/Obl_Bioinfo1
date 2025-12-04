@@ -1,7 +1,7 @@
 #Obl Bioinfo
 install.packages('seqinr')
 library(seqinr)
-setwd('C:Users/homer/OneDrive/onedrive/Documentos/GitHub/Obl_Bioinfo1')
+
 CglutamicumGenome <- read.fasta("GitHub/Obl_Bioinfo1/Cglutamicum.fna")
 CglutamicumCDS <- read.fasta('GitHub/Obl_Bioinfo1/Cglutamicum.cds')
 CglutamicumGB <- read.fasta("GitHub/Obl_Bioinfo1/Cglutamicum.gbff")
@@ -49,9 +49,20 @@ Uco_Cglutamicum1 <- uco(CglutamicumCDS[[1]])
 Uco_Cglutamicum2 <- uco(CglutamicumCDS[[2]])
 Uco_Cglutamicum3 <- uco(CglutamicumCDS[[3]])
 
-Uco_CglutamicumGENOME <- uco(unlist(CglutamicumGenome))
+Uco_CglutamicumGENOME <- uco(unlist(CglutamicumCDS), index="rscu")
+
+
 Uco_SpneumoniaeGENOME <- uco(unlist(SpneumoniaeGenome))
 
-qqqq <- translate(CglutamicumGenome)
+Cglutamicum_AA <- translate(unlist(CglutamicumCDS))
 
-getwd
+Spneumoniae_AA <- translate(unlist(SpneumoniaeGenome))
+
+nAAA <- aaa(Cglutamicum_AA)
+
+names(Uco_CglutamicumGENOME) <- nAAA
+
+vectArg <- grep("Arg",nAAA)
+
+cArg <- Uco_CglutamicumGENOME[vectArg]
+
