@@ -5,11 +5,11 @@ library(seqinr)
 #Obtener las secuencias necesarias
 CglutamicumGenome <- read.fasta("Cglutamicum.fna")
 CglutamicumCDS <- read.fasta('Cglutamicum.cds')
-CglutamicumGB <- read.fasta("Cglutamicum.gbff")
+CglutamicumGB <- read.fasta("C\Users\homer\OneDriveFacultaddeIngenieriaUniversidadORTUruguay\Documents\Obl_Bioinfo1\Cglutamicum.gbk")
 CglutamicumPEP <- read.fasta('Cglutamicum.pep')
 SpneumoniaeGenome <- read.fasta('Spneumoniae.fna')
 SpneumoniaeCDS <- read.fasta('Spneumoniae.cds')
-SpneumoniaeGB <- read.fasta('Spneumoniae.gbff')
+SpneumoniaeGB <- read.fasta('Spneumoniae.gbk')
 SpneumoniaePEP <- ('Spneumoniae.pep')
 
 #Calculo largos de genomas
@@ -117,8 +117,18 @@ Cglu_all <- do.call(c, CglutamicumCDS)
 Spneu_all <- do.call(c, SpneumoniaeCDS)
 
 
-RSCU_Cglutamicum <- uco(Cglu_all, index = "rscu")
-RSCU_Spneumoniae <- uco(Spneu_all, index = "rscu")
+RSCU_Cglutamicum <- uco(Cglu_all)
+RSCU_Spneumoniae <- uco(Spneu_all)
+
+names(RSCU_Cglutamicum) <- sapply(
+  names(RSCU_Cglutamicum),
+  function(codon) {
+    translate(s2c(toupper(codon)))
+  }
+)
+class(RSCU_Cglutamicum)
+
+
 
 #Verifico que tengo para las 64 combinaciones
 length(RSCU_Cglutamicum)  
@@ -131,6 +141,7 @@ tabla_rscu <- data.frame(
   uco_G2 = as.numeric(RSCU_Spneumoniae),
   stringsAsFactors = FALSE
 )
+
 
 tabla_rscu$AA <- sapply(tabla_rscu$codon, function(cod) {
   translate(s2c(cod))
@@ -191,40 +202,47 @@ abline(v = line_pos, lty = 2)
 
 line_pos <- bp2[cumsum(table(tabla_LRS$AA))] + diff(bp)[1]/2
 abline(v = line_pos, lty = 2)
-.
-
-# Sliding window
-
-## Ventana deslizante de largo 10K y step 10K
-
-ln_ecoli_ch1 <- length(ecoli_ch1)
-w_size <- 10000
-step <- 10000
-
-# Redondeo "hacia arriba"
-?ceiling
-
-num_frag <- ceiling(ln_ecoli_ch1/w_size)
-wins <- data.frame(
-  fragment_index = seq(1, num_frag),
-  from = seq(from = 1, to = ln_ecoli_ch1, by = w_size),
-  to = c(seq(from = step, to = ln_ecoli_ch1, by = w_size), ln_ecoli_ch1) # Le agregamos la ultima pos
-)
-
-fragmentos <- list()
-
-i=2
-for(i in 1:num_frag){
-  fragmentos[[i]] <- getFrag(ecoli_ch1, begin = wins[i,2], end = wins[i,3])
-}
 
 
-length(fragmentos)
-lengths(fragmentos)
+ORILOC
+ol <- oriloc(seq.fasta = CglutamicumGenome, gbk = "Cglutamicum.gbk")
 
+draw.oriloc(ol, main = "Grafico Oriloc")
  
 
+library(dplyr)
 
+blast12 <- read.table("sp1_vs_sp2.tsv", sep = "\t", stringsAsFactors = FALSE)
+blast21 <- read.table("sp2_vs_sp1.tsv", sep = "\t", stringsAsFactors = FALSE)
+
+colnames(blast12) <- c("query", "subject", "pident", "length", "evalue", "bitscore")
+colnames(blast21) <- c("query", "subject", "pident", "length", "evalue", "bitscore")
+
+best12 <- blast12 %>%
+  group_by(query) %>%
+  slice_max(bitscore, n = 1) %>%
+  ungroup()
+
+best21 <- blast21 %>%
+  group_by(query) %>%
+  slice_max(bitscore, n = 1) %>%
+  ungroup()
+
+brh <- inner_join(
+  best12,
+  best21,
+  by = c("query" = "subject", "subject" = "query")
+)
+
+orthologs <- brh %>%
+  select(gene_sp1 = query.x,
+         gene_sp2 = subject.x)
+
+write.table(orthologs,
+            "BRH_orthologs.tsv",
+            sep = "\t",
+            quote = FALSE,
+            row.names = FALSE)
 
 
 
