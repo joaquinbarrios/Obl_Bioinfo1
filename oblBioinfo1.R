@@ -5,7 +5,7 @@ library(seqinr)
 #Obtener las secuencias necesarias
 CglutamicumGenome <- read.fasta("Cglutamicum.fna")
 CglutamicumCDS <- read.fasta('Cglutamicum.cds')
-CglutamicumGB <- read.fasta("C\Users\homer\OneDriveFacultaddeIngenieriaUniversidadORTUruguay\Documents\Obl_Bioinfo1\Cglutamicum.gbk")
+CglutamicumGB <- read.fasta("Cglutamicum.gbk")
 CglutamicumPEP <- read.fasta('Cglutamicum.pep')
 SpneumoniaeGenome <- read.fasta('Spneumoniae.fna')
 SpneumoniaeCDS <- read.fasta('Spneumoniae.cds')
@@ -22,7 +22,7 @@ Cant_CDS_Spneumoniae <- length(SpneumoniaeCDS)
 
 #Calculo porcentage CG de genomas
 GC_Cglutamicum <- GC(unlist(CglutamicumGenome))
-GC_Spneumonia <- GC(unlist(SpneumoniaGenome))
+GC_Spneumonia <- GC(unlist(SpneumoniaeGenome))
 
 #Calculo densidades de secuencuencias codificantes
 densidad_CDS_Cglutamicum <- Cant_CDS_Cglutamicum/LargoGenomaCglutamicum
@@ -47,7 +47,7 @@ GC.Spneumoniae <- GC.Spneumoniae * 100
 
 #Boxplot de Porcentage GC en genoma 
 
-boxplot(GC.Cglutamicum, GC.Spneumoniae, names=c('cglutamicum', 'Spneumoniae'),ylab='%GC')
+boxplot(GC.Cglutamicum, GC.Spneumoniae, names=c('cglutamicum', 'Spneumoniae'),ylab='%GC',col = c('lightblue','lightyellow'))
 
 #Hasta aca hice cada cds cuanto tiene de GC. Cada punto en la grafica es un cds.
 
@@ -76,12 +76,13 @@ boxplot(
   GC1.Cglutamicum, 
   GC2.Cglutamicum,
   GC3.Cglutamicum, 
-  names = c("GC G1", 
-            "GC1 G1", 
-            "GC2 G1",
-            "GC3 G1"),
+  names = c("GC", 
+            "GC1 ", 
+            "GC2 ",
+            "GC3"),
   ylab = "%GC",
-  main = "Contenido GC total y posicional en CDSs"
+  main = "Contenido GC total y posicional en CDSs de C.glutamicum",
+  col = c("lightblue")
 )
 
 boxplot(
@@ -89,12 +90,13 @@ boxplot(
   GC1.Spneumoniae, 
   GC2.Spneumoniae,
   GC3.Spneumoniae, 
-  names = c("GC G2", 
-            "GC1 G2", 
-            "GC2 G2",
-            "GC3 G2"),
+  names = c("GC ", 
+            "GC1 ", 
+            "GC2 ",
+            "GC3 "),
   ylab = "%GC",
-  main = "Contenido GC total y posicional en CDSs"
+  main = "Contenido GC total y posicional en CDSs de S.pneumoniae",
+  col = c("lightyellow")
 )
 
 boxplot(
@@ -107,7 +109,8 @@ boxplot(
             "GC2 G1", "GC2 G2",
             "GC3 G1", "GC3 G2"),
   ylab = "%GC",
-  main = "Contenido GC total y posicional en CDSs"
+  main = "Contenido GC total y posicional en CDSs",
+  col = c('lightblue',"lightyellow")
 )
 
 
@@ -117,8 +120,24 @@ Cglu_all <- do.call(c, CglutamicumCDS)
 Spneu_all <- do.call(c, SpneumoniaeCDS)
 
 
-RSCU_Cglutamicum <- uco(Cglu_all)
-RSCU_Spneumoniae <- uco(Spneu_all)
+RSCU_Cglutamicum <- uco(Cglu_all, index = "freq")
+RSCU_Spneumoniae <- uco(Spneu_all, index = "freq")
+
+#STOP
+names(RSCU_Cglutamicum) <- tabla_rscu[,1]
+names(RSCU_Spneumoniae) <- tabla_rscu[,1]
+
+aa_gCg <- tapply(RSCU_Cglutamicum, names(RSCU_Cglutamicum), sum)
+aa_gSp <- tapply(RSCU_Spneumoniae, names(RSCU_Spneumoniae), sum)
+
+
+barplot(
+  rbind(aa_gCg, aa_gSp),
+  beside = TRUE,
+  col=c("blue","yellow"),
+  ylab = "Frecuencias de aminoacidos",
+  xlab = "Aminoácido",
+  legend.text = c("Cglu", "Spne"))
 
 names(RSCU_Cglutamicum) <- sapply(
   names(RSCU_Cglutamicum),
@@ -126,7 +145,6 @@ names(RSCU_Cglutamicum) <- sapply(
     translate(s2c(toupper(codon)))
   }
 )
-class(RSCU_Cglutamicum)
 
 
 
@@ -142,7 +160,6 @@ tabla_rscu <- data.frame(
   stringsAsFactors = FALSE
 )
 
-
 tabla_rscu$AA <- sapply(tabla_rscu$codon, function(cod) {
   translate(s2c(cod))
 })
@@ -151,6 +168,7 @@ tabla_rscu <- tabla_rscu[order(tabla_rscu$AA, tabla_rscu$codon), ]
 
 library(tidyr)
 library(ggplot2)
+
 
 par(mfrow = c(1, 2))  # 1 fila, 2 columnas
 
@@ -203,7 +221,7 @@ abline(v = line_pos, lty = 2)
 line_pos <- bp2[cumsum(table(tabla_LRS$AA))] + diff(bp)[1]/2
 abline(v = line_pos, lty = 2)
 
-
+#ACA ARRANCA EL BARPLOT
 ORILOC
 ol <- oriloc(seq.fasta = CglutamicumGenome, gbk = "Cglutamicum.gbk")
 
@@ -245,12 +263,46 @@ write.table(orthologs,
             row.names = FALSE)
 
 
+TABLAORTOLOGOSOK <- read.table('BRH_orthologs.tsv')
 
+length(TABLAORTOLOGOSOK)
 
+TABLAORTOLOGOSOK1 <-TABLAORTOLOGOSOK %>%
+  rename(
+    query    = V1,
+    subject  = V2,
+    pident   = V3,
+    length   = V4,
+    evalue   = V5,
+    bitscore = V6
+  )
 
+#Bombini guzini
 
+Top_Ten <- read.fasta('allfiles.fasta')
 
+total_allfiles <- sum(sapply(top10alineadas, length))
 
+nuevoall <- read.fasta('seqdump2.fasta')
+total_allfiles <- sum(sapply(nuevoall, length))
 
+top10alineadas <- read.fasta('top10alinedas.fasta')
 
+length(top10alineadas[[2]])
+CglutamicumCDS[[1]]
 
+tabla_Cglutamicum <- data.frame(
+  CDS = names(CglutamicumCDS),
+  G1_gc  = GC.Cglutamicum,
+  G1_gc1 = GC1.Cglutamicum,
+  G1_gc2 = GC2.Cglutamicum,
+  G1_gc3 = GC3.Cglutamicum
+)
+
+tabla_Spneumoniae <- data.frame(
+  CDS = names(SpneumoniaeCDS),
+  G1_gc  = GC.Spneumoniae,
+  G1_gc1 = GC1.Spneumoniae,
+  G1_gc2 = GC2.Spneumoniae,
+  G1_gc3 = GC3.Spneumoniae
+)
